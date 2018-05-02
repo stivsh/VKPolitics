@@ -1,0 +1,285 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script
+			  src="https://code.jquery.com/jquery-3.2.1.js"
+			  integrity="sha256-DZAnKJ/6XZ9si04Hgrsxu/8s717jcIzLy3oi35EouyE="
+			  crossorigin="anonymous"></script>
+    <script type="text/javascript">
+      google.charts.load("current", {packages:["corechart", "controls"]});
+
+      function simple_buble_plot(batches, plot, title){
+        function draw(){
+          var plot_data = google.visualization.arrayToDataTable(batches);
+
+          var options = {
+            title: title,
+            pieHole: 0.4,
+          };
+
+          var chart = new google.visualization.PieChart(plot[0]);
+          chart.draw(plot_data, options);
+
+
+        };
+        google.charts.setOnLoadCallback(draw);
+
+      }
+
+      function simple_batch_plot(batches, plot, title){
+        function draw(){
+          var plot_data = google.visualization.arrayToDataTable(batches);
+
+          var view = new google.visualization.DataView(plot_data);
+          view.setColumns([
+                 { calc: "stringify",
+                   sourceColumn: 0,
+                   type: "string" },
+                 1]);
+          var options = {
+            height: (plot.width()*0.3).toFixed(0),
+            title: title,
+            orientation: "horizontal",
+            legend: { position: "none" },
+            vAxis: {
+                minValue: 0,
+            },
+            hAxis:{showTextEvery:1,},
+            bar: {groupWidth: "90%"},
+          };
+          var chart = new google.visualization.BarChart(plot[0]);
+          chart.draw(view, options);
+
+
+        };
+        google.charts.setOnLoadCallback(draw);
+
+      }
+
+      function batch_plot_with_categ_filter(batches, plot, title){
+        function draw(){
+          var plot_data = google.visualization.arrayToDataTable(batches);
+
+          var view = new google.visualization.DataView(plot_data);
+          view.setColumns([
+                 { calc: "stringify",
+                   sourceColumn: 0,
+                   type: "string" },
+                 1]);
+
+          var dashboard = new google.visualization.Dashboard(plot[0]);
+
+          var filter_id = plot.attr('id')+'_filter';
+          var chart_id = plot.attr('id')+'_chart';
+          //alert(filter_id)
+          var filter_div = $('<div>').attr('id',filter_id);
+          var chart_div = $('<div>').attr('id',chart_id);
+          plot.append( filter_div );
+          plot.append( chart_div );
+
+          var selectedValues = [];
+          for(i = 1; i < batches.length; i++){
+            selectedValues.push(batches[i][0]);
+          }
+
+          var controller = new google.visualization.ControlWrapper({
+              'controlType': 'CategoryFilter',
+              'containerId': filter_id,
+              'options': {
+                'filterColumnIndex': 0
+              },
+              'state': {'selectedValues': selectedValues}
+            });
+
+          var chart = new google.visualization.ChartWrapper({
+              'chartType': 'BarChart',
+              'containerId': chart_id,
+              'options': {
+                'height': (plot.width()*0.3).toFixed(0),
+                  'title': title,
+                  'orientation': "horizontal",
+                  'legend': { position: "none" },
+                  'vAxis': {
+                    minValue: 0,
+                  },
+                  'hAxis':{showTextEvery:1,},
+                  'bar': {groupWidth: "90%"},
+                }
+              });
+
+          dashboard.bind(controller, chart);
+
+          // Draw the dashboard.
+          dashboard.draw(view);
+
+
+        };
+        google.charts.setOnLoadCallback(draw);
+
+      }
+
+      function draw_graphics(data, conteiner_id){
+        var base_id = $(conteiner_id).attr('id')+'_';
+        //plot age
+        var age_batches = data.ages_data.batches;
+        var normed_age_batches = data.ages_data.normed_batches;
+        var age_mean = data.ages_data.mean;
+        var age_median = data.ages_data.median;
+        var age_mode = data.ages_data.mode;
+
+        var age_plot = $('<div>').attr('id',base_id+'age_plot');
+        $(conteiner_id).append( age_plot );
+
+        var normed_age_plot = $('<div>').attr('id',base_id+'normed_age_plot');
+        $(conteiner_id).append( normed_age_plot );
+
+        var age_statistics = $('<div>').attr('id',base_id+'age_statistics')
+        $(conteiner_id).append( age_statistics );
+
+        simple_batch_plot(age_batches, age_plot, 'Распределение возрастов');
+        simple_batch_plot(normed_age_batches, normed_age_plot, 'Индекс популярности по возрасту возрастов');
+        age_statistics.append($('<div>').attr('id',base_id+'age_mean').text(`Среднее: ${age_mean.toFixed(2)}`));
+        age_statistics.append($('<div>').attr('id',base_id+'age_median').text(`Медиана: ${age_median}`));
+        age_statistics.append($('<div>').attr('id',base_id+'age_median').text(`Мода: ${age_mode}`));
+
+        //plot city data
+        var city_count_data = data.cites_data.city_count;
+        var city_count_rank = data.cites_data.city_rank;
+
+        var city_count_plot = $('<div>').attr('id',base_id+'city_count_plot')
+        $(conteiner_id).append( city_count_plot );
+
+        var city_rank_plot = $('<div>').attr('id',base_id+'city_rank_plot')
+        $(conteiner_id).append( city_rank_plot );
+
+        batch_plot_with_categ_filter(city_count_data, city_count_plot, 'Распределение по городам');
+        batch_plot_with_categ_filter(city_count_rank, city_rank_plot, 'Распределение по рейтенгу поддержки в городах');
+
+        //plot sex data
+        var sexes_data = data.sex_data.sexes;
+        var male_ages_data = data.sex_data.male_ages;
+        var female_ages_data = data.sex_data.female_ages;
+
+        var sexes_dist_plot = $('<div>').attr('id',base_id+'sexes_dist_plot');
+        $(conteiner_id).append( sexes_dist_plot );
+
+        var male_ages_data_plot = $('<div>').attr('id',base_id+'male_ages_data_plot');
+        $(conteiner_id).append( male_ages_data_plot );
+
+        var female_ages_data_plot = $('<div>').attr('id',base_id+'female_ages_data_plot');
+        $(conteiner_id).append( female_ages_data_plot );
+
+        simple_buble_plot(sexes_data, sexes_dist_plot, 'Пол');
+        simple_batch_plot(male_ages_data, male_ages_data_plot, 'Распределение по возрасту мужщин');
+        simple_batch_plot(female_ages_data, female_ages_data_plot, 'Распределение по возрасту жунщин');
+
+        //group_rating plot
+        var group_rating = data.groups_data.group_rating;
+
+        var group_rating_plot = $('<div>').attr('id',base_id+'group_rating_plot')
+        $(conteiner_id).append( group_rating_plot );
+        batch_plot_with_categ_filter(group_rating, group_rating_plot, 'Рейтинг популфрности групп в сообществе');
+
+        //popular books
+        var books = $('<ul>').attr('id',base_id+'popular_books');
+        $(conteiner_id).append( $('<h3>').text('10 Самых популярных книг:') );
+        $(conteiner_id).append( books );
+        data.popular_books.forEach(function(d){
+          books.append($('<li>').text(d))
+        });
+
+        //popular popular_movies
+        var movies = $('<ul>').attr('id',base_id+'popular_movies');
+        $(conteiner_id).append( $('<h3>').text('10 Самых популярных фильмов:') );
+        $(conteiner_id).append( movies );
+        data.popular_movies.forEach(function(d){
+          movies.append($('<li>').text(d))
+        });
+
+        //popular popular_music
+        var music = $('<ul>').attr('id',base_id+'popular_music');
+        $(conteiner_id).append( $('<h3>').text('10 Самых популярных исполнителей:') );
+        $(conteiner_id).append( music );
+        data.popular_music.forEach(function(d){
+          music.append($('<li>').text(d))
+        });
+
+        //popular popular_tv
+        var tv = $('<ul>').attr('id',base_id+'popular_books');
+        $(conteiner_id).append( $('<h3>').text('10 Самых телепередач:') );
+        $(conteiner_id).append( tv );
+        data.popular_tv.forEach(function(d){
+          tv.append($('<li>').text(d))
+        });
+
+
+        //live users
+        var hiden_count = data.hiden_count;
+        var hiden_count_plot = $('<div>').attr('id',base_id+'hiden_count_plot');
+        $(conteiner_id).append( hiden_count_plot );
+        simple_buble_plot(hiden_count, hiden_count_plot, 'Соотношение общего числа пользователей и пользователей с скрытым профилем');
+
+        var deactivated_count = data.deactivated_count;
+        var deactivated_count_plot = $('<div>').attr('id',base_id+'deactivated_count_plot');
+        $(conteiner_id).append( deactivated_count_plot );
+        simple_buble_plot(deactivated_count, deactivated_count_plot, 'Соотношение общего числа пользователей и пользователей с удалённым профилем');
+
+        var live_persant = data.live_persant;
+        var live_count_plot = $('<div>').attr('id',base_id+'live_count_plot');
+        $(conteiner_id).append( live_count_plot );
+        simple_buble_plot(live_persant, live_count_plot, 'Соотношение общего числа пользователей с открытым аккаунтом и пользователей с удалённым профилем')
+
+
+      }
+
+
+      $.ajax({
+        dataType: "json",
+        url: "./json/teamnavalny.js",
+        mimeType: "application/json",
+        success: function(json_data) {
+          draw_graphics(json_data, '#teamnavalny');
+        }
+      });
+
+      $.ajax({
+        dataType: "json",
+        url: "./json/anatolijsharij.js",
+        mimeType: "application/json",
+        success: function(json_data) {
+          draw_graphics(json_data, '#shariy');
+        }
+      });
+
+      $.ajax({
+        dataType: "json",
+        url: "./json/putin_z.js",
+        mimeType: "application/json",
+        success: function(json_data) {
+          draw_graphics(json_data, '#putin');
+        }
+      });
+
+    </script>
+  </head>
+  <body>
+  <div id="block_container">
+    <div id = 'teamnavalny' style = 'display: inline-block; width:46%;'>
+      <img src = "http://www.mk.ru/upload/entities/2017/04/27/articles/detailPicture/44/cf/33/45/a64794d2f5170efc2f9ac7a520ac1ef0.jpg"
+        style = "width:300px; display: block; margin: auto;"
+      ></img>
+    </div>
+    <div id = 'shariy' style = 'display: none;  width:10%;'>
+      <img src = "http://images.aif.ru/006/589/3a0ac2ac30afd39aeecb8875e3598659.jpg
+        style = "width:300px; display: block; margin: auto;"
+      ></img>
+    </div>
+    <div id = 'putin' style = 'display: inline-block;  width:46%;'>
+      <img src = "https://img.washingtonpost.com/rf/image_960w/2010-2019/Wires/Images/2017-01-16/AP/Russia_Waiting_For_Trump_80032.jpg-d725c.jpg"
+        style = "width:300px; display: block; margin: auto;"
+      ></img>
+    </div>
+  </div>
+  </body>
+</html>

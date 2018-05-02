@@ -1,0 +1,9 @@
+check report_example.pdf
+
+This is a project that loads information about members of different
+political communities in Russian Federation and creates a simple Web page
+with descriptive statistics.
+load_data_funcs.py contains functions for loading data that wraps vk API.
+Load_data_from_vk.ipynb contains code, an example of loading data and also
+save data to the json file.
+report.html report with descriptive statistics.
